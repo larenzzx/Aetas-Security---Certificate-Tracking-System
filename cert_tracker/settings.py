@@ -141,8 +141,8 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Custom user model (will be created in Step 2)
-# AUTH_USER_MODEL = 'accounts.User'  # Uncomment after creating custom user model
+# Custom user model
+AUTH_USER_MODEL = 'accounts.User'
 
 # Security settings for production (can be enhanced later)
 # SESSION_COOKIE_SECURE = True  # Enable in production with HTTPS
