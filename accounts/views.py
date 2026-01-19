@@ -1,3 +1,335 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import (
+    PasswordResetView,
+    PasswordResetDoneView,
+    PasswordResetConfirmView,
+    PasswordResetCompleteView,
+    PasswordChangeView,
+)
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.debug import sensitive_post_parameters
+from django.contrib.auth.forms import AuthenticationForm
 
-# Create your views here.
+
+@sensitive_post_parameters('password')
+@csrf_protect
+@never_cache
+def login_view(request):
+    """
+    Handle user login.
+
+    Security features:
+    - @sensitive_post_parameters: Prevents password from appearing in error reports
+    - @csrf_protect: Protects against CSRF attacks
+    - @never_cache: Prevents caching of login page (security)
+
+    Flow:
+    1. User submits email + password
+    2. Authenticate credentials
+    3. Check if account is active
+    4. Check if password must be changed
+    5. Log user in and redirect
+
+    Why custom view instead of Django's LoginView?
+    - Need to check must_change_password flag
+    - Custom redirect logic
+    - Better control over error messages
+    """
+
+    # If user is already logged in, redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect('dashboard:home')
+
+    # Handle POST request (form submission)
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+
+        if form.is_valid():
+            # Get credentials from form
+            email = form.cleaned_data.get('username')  # Django calls it username
+            password = form.cleaned_data.get('password')
+
+            # Authenticate user
+            user = authenticate(request, username=email, password=password)
+
+            if user is not None:
+                # Check if account is active
+                if not user.is_active:
+                    messages.error(
+                        request,
+                        'Your account has been deactivated. Please contact your administrator.'
+                    )
+                    return render(request, 'accounts/login.html', {'form': form})
+
+                # Check if user must change password
+                if user.must_change_password:
+                    # Store user ID in session (don't log them in yet)
+                    request.session['user_id_pending_password_change'] = user.id
+                    messages.warning(
+                        request,
+                        'You must change your password before continuing.'
+                    )
+                    return redirect('accounts:password_change_required')
+
+                # Log user in
+                login(request, user)
+
+                # Success message
+                messages.success(request, f'Welcome back, {user.get_full_name()}!')
+
+                # Redirect to next page or dashboard
+                next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard:home'
+                return redirect(next_url)
+            else:
+                # Authentication failed (should not reach here if form is valid)
+                messages.error(request, 'Invalid email or password.')
+        else:
+            # Form validation failed (invalid credentials)
+            messages.error(request, 'Invalid email or password.')
+
+    else:
+        # GET request - show login form
+        form = AuthenticationForm()
+
+    return render(request, 'accounts/login.html', {
+        'form': form,
+        'next': request.GET.get('next', ''),
+    })
+
+
+@login_required
+def logout_view(request):
+    """
+    Handle user logout.
+
+    Why custom view?
+    - Show success message
+    - Log activity (will be added in later step)
+    - Clean session data
+
+    Security:
+    - Requires @login_required (can't logout if not logged in)
+    - Clears all session data
+    """
+    user_name = request.user.get_full_name()
+    logout(request)
+    messages.success(request, f'Goodbye, {user_name}! You have been logged out successfully.')
+    return redirect('accounts:login')
+
+
+class CustomPasswordResetView(PasswordResetView):
+    """
+    Handle password reset request (forgot password).
+
+    Flow:
+    1. User enters email
+    2. System sends reset link to email
+    3. User clicks link in email
+    4. User sets new password
+
+    Django handles:
+    - Token generation (secure, time-limited)
+    - Email sending
+    - Token validation
+
+    Security:
+    - Tokens expire after 3 days (default)
+    - Tokens are single-use
+    - No indication if email exists (prevents user enumeration)
+    """
+    template_name = 'accounts/password_reset_form.html'
+    email_template_name = 'accounts/password_reset_email.html'
+    subject_template_name = 'accounts/password_reset_subject.txt'
+    success_url = reverse_lazy('accounts:password_reset_done')
+
+    def form_valid(self, form):
+        """Override to add success message"""
+        messages.success(
+            self.request,
+            'If an account exists with that email, you will receive password reset instructions.'
+        )
+        return super().form_valid(form)
+
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    """
+    Show confirmation that reset email was sent.
+
+    Security note:
+    - Always shows success message even if email doesn't exist
+    - Prevents attackers from discovering valid emails
+    """
+    template_name = 'accounts/password_reset_done.html'
+
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    """
+    Handle password reset confirmation (user sets new password).
+
+    This view is accessed via the link sent to user's email.
+
+    Security:
+    - Token is validated
+    - Password complexity is enforced (Django validators)
+    - Token is invalidated after use
+    """
+    template_name = 'accounts/password_reset_confirm.html'
+    success_url = reverse_lazy('accounts:password_reset_complete')
+
+    def form_valid(self, form):
+        """Override to add success message and clear must_change_password flag"""
+        user = form.save()
+
+        # Clear the must_change_password flag if it was set
+        if user.must_change_password:
+            user.must_change_password = False
+            user.save()
+
+        messages.success(
+            self.request,
+            'Your password has been reset successfully. You can now log in.'
+        )
+        return super().form_valid(form)
+
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    """
+    Show confirmation that password was reset successfully.
+    """
+    template_name = 'accounts/password_reset_complete.html'
+
+
+class CustomPasswordChangeView(PasswordChangeView):
+    """
+    Handle password change for logged-in users.
+
+    Two use cases:
+    1. User voluntarily changes password (from profile)
+    2. Forced password change (must_change_password=True)
+
+    Security:
+    - Requires current password (prevents unauthorized changes)
+    - Enforces password complexity
+    - Logs user out from other sessions (optional, can be enabled)
+    """
+    template_name = 'accounts/password_change.html'
+    success_url = reverse_lazy('dashboard:home')
+
+    def form_valid(self, form):
+        """Override to add success message and clear must_change_password flag"""
+        user = form.save()
+
+        # Clear the must_change_password flag
+        if user.must_change_password:
+            user.must_change_password = False
+            user.save()
+
+        messages.success(
+            self.request,
+            'Your password has been changed successfully.'
+        )
+
+        # Keep user logged in after password change
+        # Django's PasswordChangeView does this automatically
+        return super().form_valid(form)
+
+
+def password_change_required_view(request):
+    """
+    Handle forced password change for users with temporary passwords.
+
+    This is a special view for users who must change their password
+    before accessing the system (must_change_password=True).
+
+    Flow:
+    1. Admin creates user with temporary password
+    2. User logs in with temporary password
+    3. Login view redirects here instead of logging them in
+    4. User changes password
+    5. User is logged in and redirected to dashboard
+
+    Security:
+    - User is NOT logged in yet (prevents system access with temp password)
+    - User ID is stored in session temporarily
+    - Session data is cleared after password change
+    """
+    # Get user ID from session (set by login view)
+    user_id = request.session.get('user_id_pending_password_change')
+
+    if not user_id:
+        messages.error(request, 'Invalid request. Please log in again.')
+        return redirect('accounts:login')
+
+    # Import here to avoid circular import
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found. Please log in again.')
+        return redirect('accounts:login')
+
+    # Handle POST request (form submission)
+    if request.method == 'POST':
+        # Import here to avoid unnecessary imports
+        from django.contrib.auth.forms import SetPasswordForm
+
+        form = SetPasswordForm(user, request.POST)
+
+        if form.is_valid():
+            # Save new password
+            user = form.save()
+
+            # Clear must_change_password flag
+            user.must_change_password = False
+            user.save()
+
+            # Clear session data
+            del request.session['user_id_pending_password_change']
+
+            # Log user in
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+            messages.success(
+                request,
+                'Password changed successfully. Welcome to the Certificate Tracking System!'
+            )
+
+            return redirect('dashboard:home')
+    else:
+        # GET request - show password change form
+        from django.contrib.auth.forms import SetPasswordForm
+        form = SetPasswordForm(user)
+
+    return render(request, 'accounts/password_change_required.html', {
+        'form': form,
+        'user': user,
+    })
+
+
+# Placeholder views for profile management (will be implemented in later steps)
+@login_required
+def profile_detail(request, user_id):
+    """View user profile (placeholder)"""
+    messages.info(request, 'Profile view will be implemented in a later step.')
+    return redirect('dashboard:home')
+
+
+@login_required
+def profile_list(request):
+    """View all employees (placeholder)"""
+    messages.info(request, 'Employee list will be implemented in a later step.')
+    return redirect('dashboard:home')
+
+
+@login_required
+def user_create(request):
+    """Create new user - Admin only (placeholder)"""
+    messages.info(request, 'User creation will be implemented in Step 4.')
+    return redirect('dashboard:home')

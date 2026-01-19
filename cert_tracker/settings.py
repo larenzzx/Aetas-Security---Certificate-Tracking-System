@@ -155,3 +155,20 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
 # Allowed file extensions for certificate uploads
 ALLOWED_CERTIFICATE_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg']
+
+# Email configuration for password reset
+# Development: Emails are printed to console
+# Production: Configure with real SMTP server (Gmail, SendGrid, etc.)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Development
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Production
+
+# SMTP settings for production (uncomment and configure when deploying)
+# EMAIL_HOST = 'smtp.gmail.com'  # or your SMTP server
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@company.com'
+# EMAIL_HOST_PASSWORD = 'your-email-password'  # Use environment variable!
+# DEFAULT_FROM_EMAIL = 'Certificate Tracking System <noreply@company.com>'
+
+# For development, just use a simple from email
+DEFAULT_FROM_EMAIL = 'Certificate Tracking System <noreply@localhost>'

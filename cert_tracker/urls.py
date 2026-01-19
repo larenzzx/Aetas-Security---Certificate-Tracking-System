@@ -18,13 +18,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    # Admin panel
     path('admin/', admin.site.urls),
-    # App URLs will be added in later steps
-    # path('accounts/', include('accounts.urls')),
-    # path('certificates/', include('certificates.urls')),
-    # path('dashboard/', include('dashboard.urls')),
+
+    # Redirect root URL to dashboard
+    path('', RedirectView.as_view(pattern_name='dashboard:home', permanent=False)),
+
+    # App URLs
+    path('accounts/', include('accounts.urls')),
+    path('certificates/', include('certificates.urls')),
+    path('dashboard/', include('dashboard.urls')),
 ]
 
 # Serve media files during development
