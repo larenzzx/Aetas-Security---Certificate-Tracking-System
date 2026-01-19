@@ -1,0 +1,17 @@
+# Django Framework
+Django>=6.0,<7.0
+
+# Database adapter for PostgreSQL (production)
+psycopg2-binary>=2.9.9
+
+# Python environment variables (for production secrets)
+python-decouple>=3.8
+
+# Image processing (for profile photos and certificates)
+Pillow>=10.0.0
+
+# Development tools
+django-debug-toolbar>=4.2.0
+
+# Security
+django-cors-headers>=4.3.0
