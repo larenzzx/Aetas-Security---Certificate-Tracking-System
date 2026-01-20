@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load permission_tags %}
+
+{% block title %}{{ employee.get_full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Breadcrumb Navigation -->
+    <div class="text-sm breadcrumbs mb-4">
+        <ul>
+            <li><a href="{% url 'accounts:profile_list' %}">Employees</a></li>
+            <li>{{ employee.get_full_name }}</li>
+        </ul>
+    </div>
+
+    <!-- Page Header with Profile -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <div class="flex items-start justify-between flex-wrap gap-4">
+                <!-- Profile Section -->
+                <div class="flex items-center gap-4">
+                    <div class="avatar placeholder">
+                        <div class="bg-primary text-primary-content rounded-full w-24">
+                            {% if employee.profile_image %}
+                                <img src="{{ employee.profile_image.url }}" alt="{{ employee.get_full_name }}" />
+                            {% else %}
+                                <span class="text-4xl">{{ employee.first_name.0 }}{{ employee.last_name.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold">{{ employee.get_full_name }}</h1>
+                        <p class="text-base-content/60 mt-1">{{ employee.email }}</p>
+                        <div class="flex gap-2 mt-2">
+                            <span class="badge {{ employee.role|get_role_badge_class }}">
+                                {{ employee.get_role_display }}
+                            </span>
+                            {% if employee.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-ghost">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2">
+                    <a href="{% url 'accounts:profile_list' %}" class="btn btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                        Back to List
+                    </a>
+                    <a href="{% url 'certificates:employee_certificates' employee.pk %}" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        View Certificates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Employee Information -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Employee Details Card -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Employee Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-base-content/60">Department</p>
+                            <p class="font-semibold">{{ employee.department|default:"Not specified" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-base-content/60">Position</p>
+                            <p class="font-semibold">{{ employee.position|default:"Not specified" }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-base-content/60">Member Since</p>
+                            <p class="font-semibold">{{ employee.date_joined|date:"M d, Y" }}</p>
+                        </div>
+                        {% if employee.last_login %}
+                        <div>
+                            <p class="text-sm text-base-content/60">Last Login</p>
+                            <p class="font-semibold">{{ employee.last_login|date:"M d, Y - g:i A" }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificate Summary Card -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Certificate Summary</h2>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span>Total Certificates:</span>
+                            <span class="badge badge-lg badge-primary">{{ total_certificates }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Active:</span>
+                            <span class="badge badge-lg badge-success">{{ active_certificates }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Expired:</span>
+                            <span class="badge badge-lg badge-error">{{ expired_certificates }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Expiring Soon:</span>
+                            <span class="badge badge-lg badge-warning">{{ expiring_soon_count }}</span>
+                        </div>
+                    </div>
+                    <div class="card-actions justify-end mt-4">
+                        <a href="{% url 'certificates:employee_certificates' employee.pk %}" class="btn btn-sm btn-primary">
+                            View All Certificates
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificates by Provider -->
+            {% if certificates_by_provider %}
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Top Providers</h2>
+                    <div class="space-y-2">
+                        {% for item in certificates_by_provider %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">{{ item.provider__name }}</span>
+                            <span class="badge">{{ item.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Recent Certificates & Alerts -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Expiring Soon Alert -->
+            {% if expiring_soon_list %}
+            <div class="alert alert-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <div>
+                    <h3 class="font-bold">{{ expiring_soon_count }} Certificate{{ expiring_soon_count|pluralize }} Expiring Soon</h3>
+                    <div class="text-sm">
+                        {% for cert in expiring_soon_list|slice:":3" %}
+                            <div>{{ cert.name }} - {{ cert.days_until_expiry }} days left</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Certificates -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Recent Certificates</h2>
+
+                    {% if recent_certificates %}
+                    <div class="space-y-4">
+                        {% for cert in recent_certificates %}
+                        <div class="border border-base-300 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <h3 class="font-bold">{{ cert.name }}</h3>
+                                        <span class="badge {{ cert.get_status_display_class }}">
+                                            {{ cert.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="text-sm space-y-1">
+                                        <p><strong>Provider:</strong> {{ cert.provider.name }}</p>
+                                        <p><strong>Issue Date:</strong> {{ cert.issue_date|date:"M d, Y" }}</p>
+                                        {% if cert.expiry_date %}
+                                        <p><strong>Expiry Date:</strong> {{ cert.expiry_date|date:"M d, Y" }}</p>
+                                        {% else %}
+                                        <p><strong>Expiry:</strong> <span class="badge badge-info badge-sm">Lifetime</span></p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{% url 'certificates:detail' cert.pk %}" class="btn btn-sm btn-ghost">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="card-actions justify-end mt-4">
+                        <a href="{% url 'certificates:employee_certificates' employee.pk %}" class="btn btn-sm btn-ghost">
+                            View All {{ total_certificates }} Certificates →
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-base-content/50">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto mb-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <p class="text-lg font-semibold">No certificates yet</p>
+                        <p class="mt-2">{{ employee.get_full_name }} hasn't added any certifications</p>
+                        {% if can_edit %}
+                        <a href="{% url 'certificates:create' %}" class="btn btn-primary mt-4">Add First Certificate</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

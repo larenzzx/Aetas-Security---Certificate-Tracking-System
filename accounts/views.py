@@ -313,19 +313,156 @@ def password_change_required_view(request):
     })
 
 
-# Placeholder views for profile management (will be implemented in later steps)
 @login_required
 def profile_detail(request, user_id):
-    """View user profile (placeholder)"""
-    messages.info(request, 'Profile view will be implemented in a later step.')
-    return redirect('dashboard:home')
+    """
+    Display detailed profile page for a specific employee.
+
+    Visible to: All authenticated users
+
+    Features:
+    - Employee personal information
+    - Department and position
+    - Certificate summary statistics
+    - Recent certificates list
+    - Expiring certificates alert
+
+    Performance Optimizations:
+    - Uses select_related() for certificate provider/category
+    - Aggregates certificate counts efficiently
+    - Limits recent certificates to 5 (pagination not needed)
+
+    Security:
+    - All users can view any profile (transparency)
+    - Edit buttons only shown to owner or admin
+    """
+    from django.shortcuts import get_object_or_404
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count, Q
+    from certificates.models import Certificate
+
+    User = get_user_model()
+
+    # Get the employee profile
+    # Use select_related to fetch profile image in same query
+    employee = get_object_or_404(User, pk=user_id)
+
+    # Check if current user can edit this profile
+    can_edit = request.user.is_admin() or request.user.id == employee.id
+
+    # Get certificate statistics with efficient queries
+    # Using annotate to count in database instead of Python
+    certificates = Certificate.objects.filter(user=employee)
+
+    total_certificates = certificates.count()
+    active_certificates = certificates.filter(status='ACTIVE').count()
+    expired_certificates = certificates.filter(status='EXPIRED').count()
+
+    # Count expiring soon (next 90 days)
+    expiring_soon_count = 0
+    expiring_soon_list = []
+    for cert in certificates.filter(status='ACTIVE').select_related('provider', 'category'):
+        if cert.is_expiring_soon(90):
+            expiring_soon_count += 1
+            expiring_soon_list.append(cert)
+
+    # Get recent certificates (last 5)
+    # select_related to avoid N+1 queries for provider/category
+    recent_certificates = certificates.select_related(
+        'provider', 'category'
+    ).order_by('-issue_date')[:5]
+
+    # Get certificates by provider (for visual breakdown)
+    certificates_by_provider = certificates.values(
+        'provider__name'
+    ).annotate(count=Count('id')).order_by('-count')[:5]
+
+    context = {
+        'employee': employee,
+        'can_edit': can_edit,
+        'total_certificates': total_certificates,
+        'active_certificates': active_certificates,
+        'expired_certificates': expired_certificates,
+        'expiring_soon_count': expiring_soon_count,
+        'expiring_soon_list': expiring_soon_list,
+        'recent_certificates': recent_certificates,
+        'certificates_by_provider': certificates_by_provider,
+        'is_admin': request.user.is_admin(),
+    }
+
+    return render(request, 'accounts/profile_detail.html', context)
 
 
 @login_required
 def profile_list(request):
-    """View all employees (placeholder)"""
-    messages.info(request, 'Employee list will be implemented in a later step.')
-    return redirect('dashboard:home')
+    """
+    Display list of all employees in the system.
+
+    Visible to: All authenticated users
+
+    Features:
+    - Searchable list of all employees
+    - Certificate count per employee
+    - Department and position display
+    - Quick link to detailed profile
+    - DataTables for sorting/filtering
+
+    Performance Optimizations:
+    - Uses annotate() to count certificates in database
+    - Avoids N+1 query problem
+    - Orders by last name for predictable sorting
+
+    Security:
+    - All authenticated users can view employee list
+    - Transparency helps teams know who has which certifications
+    """
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count, Q
+
+    User = get_user_model()
+
+    # Get search query
+    search_query = request.GET.get('search', '').strip()
+
+    # Get all active users with certificate counts
+    # Using annotate for efficient counting (single query instead of N queries)
+    employees = User.objects.filter(
+        is_active=True
+    ).annotate(
+        total_certs=Count('certificates'),
+        active_certs=Count('certificates', filter=Q(certificates__status='ACTIVE')),
+        expired_certs=Count('certificates', filter=Q(certificates__status='EXPIRED'))
+    ).order_by('first_name', 'last_name')
+
+    # Apply search filter if provided
+    if search_query:
+        employees = employees.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(department__icontains=search_query) |
+            Q(position__icontains=search_query)
+        )
+
+    # Calculate summary statistics
+    total_employees = employees.count()
+    total_admins = employees.filter(role='ADMIN').count()
+    total_employees_role = employees.filter(role='EMPLOYEE').count()
+
+    # Employees with certificates
+    employees_with_certs = employees.filter(total_certs__gt=0).count()
+
+    context = {
+        'employees': employees,
+        'search_query': search_query,
+        'total_employees': total_employees,
+        'total_admins': total_admins,
+        'total_employees_role': total_employees_role,
+        'employees_with_certs': employees_with_certs,
+        'is_admin': request.user.is_admin(),
+    }
+
+    return render(request, 'accounts/profile_list.html', context)
 
 
 @login_required

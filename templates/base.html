@@ -1,11 +1,20 @@
 {% load permission_tags %}
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>{% block title %}Certificate Tracking System{% endblock %}</title>
+
+    <!-- Immediate theme application to prevent flash -->
+    <script>
+        // Apply theme immediately before page renders
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,8 +35,8 @@
 
     <!-- Custom styles -->
     <style>
-        /* Smooth transitions for theme switching */
-        * {
+        /* Smooth transitions for theme switching - only when theme-transitioning class is present */
+        html.theme-transitioning * {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
     </style>
@@ -144,7 +153,7 @@
             <footer class="footer footer-center p-10 bg-base-300 text-base-content mt-auto">
                 <aside>
                     <p class="font-bold">Certificate Tracking System</p>
-                    <p>Internal company certification management platform</p>
+                    <p>Aetas Security</p>
                     <p>&copy; {% now "Y" %} - All rights reserved</p>
                 </aside>
             </footer>
@@ -253,16 +262,23 @@
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.querySelector('html');
 
-        // Load saved theme or default to light
+        // Set toggle checkbox based on current theme (already applied in head)
         const savedTheme = localStorage.getItem('theme') || 'light';
-        html.setAttribute('data-theme', savedTheme);
         themeToggle.checked = savedTheme === 'dark';
 
-        // Toggle theme
+        // Toggle theme with smooth transition
         themeToggle.addEventListener('change', function() {
             const newTheme = this.checked ? 'dark' : 'light';
+
+            // Add transition class for smooth animation
+            html.classList.add('theme-transitioning');
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+
+            // Remove transition class after animation completes
+            setTimeout(() => {
+                html.classList.remove('theme-transitioning');
+            }, 300);
         });
     </script>
 
