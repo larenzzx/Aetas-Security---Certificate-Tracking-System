@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - CTS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">{{ page_title }}</h1>
+            <p class="text-base-content/60 mt-2">
+                {% if certificate %}
+                    Update certificate information
+                {% else %}
+                    Add a new certification to the tracking system
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% if certificate %}{% url 'certificates:detail' certificate.pk %}{% else %}{% url 'certificates:list' %}{% endif %}" class="btn btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Employee Selection (Admin Only) -->
+                {% if is_admin %}
+                <div class="form-control">
+                    <label class="label" for="{{ form.user.id_for_label }}">
+                        <span class="label-text font-semibold">{{ form.user.label }} *</span>
+                    </label>
+                    {{ form.user }}
+                    {% if form.user.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ form.user.errors.0 }}</span>
+                    </label>
+                    {% endif %}
+                </div>
+                {% else %}
+                {{ form.user }}
+                {% endif %}
+
+                <!-- Certificate Details Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        Certificate Information
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Certificate Name -->
+                        <div class="form-control md:col-span-2">
+                            <label class="label" for="{{ form.name.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.name.label }} *</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.name.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.name.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Provider -->
+                        <div class="form-control md:col-span-2">
+                            <label class="label" for="{{ form.provider_name.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.provider_name.label }} *</span>
+                            </label>
+                            {{ form.provider_name }}
+                            {% if form.provider_name.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.provider_name.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.provider_name.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.provider_name.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Datalist for provider autocomplete -->
+                        <datalist id="provider-datalist">
+                            {% for provider in all_providers %}
+                            <option value="{{ provider.name }}">
+                            {% endfor %}
+                        </datalist>
+
+                        <!-- Certification ID -->
+                        <div class="form-control md:col-span-2">
+                            <label class="label" for="{{ form.certification_id.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.certification_id.label }}</span>
+                            </label>
+                            {{ form.certification_id }}
+                            {% if form.certification_id.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.certification_id.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.certification_id.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.certification_id.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Dates Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                        Dates
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Issue Date -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.issue_date.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.issue_date.label }} *</span>
+                            </label>
+                            {{ form.issue_date }}
+                            {% if form.issue_date.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.issue_date.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.issue_date.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.issue_date.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Expiry Date -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.expiry_date.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.expiry_date.label }}</span>
+                            </label>
+                            {{ form.expiry_date }}
+                            {% if form.expiry_date.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.expiry_date.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.expiry_date.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.expiry_date.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Status -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.status.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.status.label }} *</span>
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.status.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.status.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Documentation Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                        </svg>
+                        Documentation
+                    </h2>
+
+                    <div class="space-y-4">
+                        <!-- Certificate File -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.certificate_file.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.certificate_file.label }}</span>
+                            </label>
+                            {{ form.certificate_file }}
+                            {% if certificate and certificate.certificate_file %}
+                            <label class="label">
+                                <span class="label-text-alt text-info">
+                                    Current file: <a href="{{ certificate.certificate_file.url }}" target="_blank" class="link">{{ certificate.certificate_file.name }}</a>
+                                </span>
+                            </label>
+                            {% endif %}
+                            {% if form.certificate_file.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.certificate_file.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.certificate_file.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.certificate_file.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Verification URL -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.verification_url.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.verification_url.label }}</span>
+                            </label>
+                            {{ form.verification_url }}
+                            {% if form.verification_url.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.verification_url.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.verification_url.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.verification_url.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.notes.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.notes.label }}</span>
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.notes.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.notes.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.notes.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="btn btn-primary flex-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% if certificate %}Update Certificate{% else %}Create Certificate{% endif %}
+                    </button>
+                    <a href="{% if certificate %}{% url 'certificates:detail' certificate.pk %}{% else %}{% url 'certificates:list' %}{% endif %}" class="btn btn-ghost">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

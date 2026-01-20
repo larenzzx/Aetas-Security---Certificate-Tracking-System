@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}My Certificates - CTS{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">My Certificates</h1>
+            <p class="text-base-content/60 mt-2">Your personal certification portfolio</p>
+        </div>
+        <a href="{% url 'certificates:create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Certificate
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Total</div>
+            <div class="stat-value text-primary">{{ total_certificates }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Active</div>
+            <div class="stat-value text-success">{{ active_certificates }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Expired</div>
+            <div class="stat-value text-error">{{ expired_certificates }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Expiring Soon</div>
+            <div class="stat-value text-warning">{{ expiring_soon_count }}</div>
+        </div>
+    </div>
+
+    <!-- Certificates Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for cert in certificates %}
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex items-start justify-between mb-2">
+                    <h2 class="card-title text-lg">{{ cert.name }}</h2>
+                    <span class="badge {{ cert.get_status_display_class }}">{{ cert.get_status_display }}</span>
+                </div>
+
+                <div class="space-y-2 text-sm">
+                    <p><strong>Provider:</strong> {{ cert.provider.name }}</p>
+                    <p><strong>Issue Date:</strong> {{ cert.issue_date|date:"M d, Y" }}</p>
+                    {% if cert.expiry_date %}
+                    <p><strong>Expiry:</strong> {{ cert.expiry_date|date:"M d, Y" }}</p>
+                    {% else %}
+                    <p><strong>Expiry:</strong> <span class="badge badge-info badge-sm">Lifetime</span></p>
+                    {% endif %}
+                </div>
+
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'certificates:detail' cert.pk %}" class="btn btn-sm btn-ghost">View</a>
+                    <a href="{% url 'certificates:update' cert.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto mb-4 text-base-content/50">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <p class="text-lg font-semibold">No certificates yet</p>
+            <p class="text-base-content/60 mt-2">Add your first certification to get started</p>
+            <a href="{% url 'certificates:create' %}" class="btn btn-primary mt-4">Add Certificate</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

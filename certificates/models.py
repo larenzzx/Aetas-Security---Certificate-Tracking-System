@@ -235,7 +235,9 @@ class Certificate(models.Model):
         CertificateCategory,
         on_delete=models.PROTECT,
         related_name='certificates',
-        help_text="Category this certificate belongs to"
+        help_text="Category this certificate belongs to",
+        null=True,
+        blank=True
     )
 
     # Certificate details

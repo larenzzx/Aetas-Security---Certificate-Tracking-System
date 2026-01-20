@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load permission_tags %}
+
+{% block title %}Employee Certificates - CTS{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">Employee Certificates</h1>
+            <p class="text-base-content/60 mt-2">View certificates by employee</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'certificates:my_certificates' %}" class="btn btn-ghost">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                My Certificates
+            </a>
+            <a href="{% url 'certificates:create' %}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Certificate
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Total Employees</div>
+            <div class="stat-value text-primary">{{ total_employees }}</div>
+            <div class="stat-desc">With certificates</div>
+        </div>
+
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Total Certificates</div>
+            <div class="stat-value text-info">{{ total_certificates }}</div>
+            <div class="stat-desc">Across all employees</div>
+        </div>
+
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Active</div>
+            <div class="stat-value text-success">{{ active_certificates }}</div>
+            <div class="stat-desc">Currently valid</div>
+        </div>
+
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Expiring Soon</div>
+            <div class="stat-value text-warning">{{ expiring_soon_count }}</div>
+            <div class="stat-desc">Next 90 days</div>
+        </div>
+    </div>
+
+    <!-- Employees Table -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title mb-4">Employees with Certificates</h2>
+
+            <!-- DataTable -->
+            <div class="overflow-x-auto">
+                <table id="employeesTable" class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Total Certificates</th>
+                            <th>Active</th>
+                            <th>Expired</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-neutral text-neutral-content rounded-full w-10">
+                                            <span class="text-sm">{{ employee.first_name.0 }}{{ employee.last_name.0 }}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold">{{ employee.get_full_name }}</div>
+                                        <div class="text-sm opacity-50">{{ employee.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ employee.department|default:"N/A" }}</td>
+                            <td>
+                                <span class="badge badge-lg badge-primary">{{ employee.total_certs }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-success">{{ employee.active_certs }}</span>
+                            </td>
+                            <td>
+                                {% if employee.expired_certs > 0 %}
+                                    <span class="badge badge-error">{{ employee.expired_certs }}</span>
+                                {% else %}
+                                    <span class="badge badge-ghost">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'certificates:employee_certificates' employee.pk %}" class="btn btn-sm btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    View Certificates
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-8">
+                                <div class="text-base-content/50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto mb-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                    </svg>
+                                    <p class="text-lg font-semibold">No employees with certificates found</p>
+                                    <p class="mt-2">Start by adding your first certificate</p>
+                                    <a href="{% url 'certificates:create' %}" class="btn btn-primary mt-4">Add Certificate</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables Initialization -->
+<script>
+$(document).ready(function() {
+    // Only initialize DataTables if there are employees
+    {% if employees %}
+    $('#employeesTable').DataTable({
+        "pageLength": 25,
+        "order": [[2, "desc"]], // Sort by total certificates descending
+        "language": {
+            "search": "Search employees:",
+            "lengthMenu": "Show _MENU_ employees per page",
+            "info": "Showing _START_ to _END_ of _TOTAL_ employees",
+            "infoEmpty": "No employees available",
+            "infoFiltered": "(filtered from _MAX_ total employees)",
+            "emptyTable": "No employees found",
+            "zeroRecords": "No matching employees found"
+        },
+        "responsive": true,
+        "columnDefs": [
+            { "orderable": false, "targets": 5 } // Disable sorting for Actions column
+        ]
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
