@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Create New User - CTS{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">Create New User</h1>
+            <p class="text-base-content/60 mt-2">Add a new employee to the Certificate Tracking System</p>
+        </div>
+        <a href="{% url 'accounts:profile_list' %}" class="btn btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Employees
+        </a>
+    </div>
+
+    <!-- Information Card -->
+    <div role="alert" class="alert alert-info mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div class="text-sm">
+            <p class="font-semibold mb-1">How It Works:</p>
+            <ul class="list-disc list-inside space-y-1">
+                <li>A secure temporary password will be generated automatically</li>
+                <li><strong>You will receive the password</strong> on the next screen to share with the user</li>
+                <li>Communicate the credentials via a secure channel (phone, in-person, secure messaging)</li>
+                <li>The user must change their password on first login</li>
+                <li>No email will be sent - you control how credentials are delivered</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- User Creation Form -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Personal Information Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        Personal Information
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Email -->
+                        <div class="form-control md:col-span-2">
+                            <label class="label" for="{{ form.email.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.email.label }} *</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.email.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.email.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- First Name -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.first_name.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.first_name.label }} *</span>
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.last_name.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.last_name.label }} *</span>
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Company Information Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                        </svg>
+                        Company Information
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Department -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.department.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.department.label }}</span>
+                            </label>
+                            {{ form.department }}
+                            {% if form.department.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.department.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.department.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.department.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Position -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.position.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.position.label }}</span>
+                            </label>
+                            {{ form.position }}
+                            {% if form.position.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.position.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.position.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.position.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Permissions Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                        Permissions & Access
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Role -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.role.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.role.label }} *</span>
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.role.help_text }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.role.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.role.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+
+                            <!-- Role Info -->
+                            <div class="mt-3 p-3 bg-base-200 rounded-lg text-sm">
+                                <p class="font-semibold mb-2">Role Permissions:</p>
+                                <div class="space-y-1">
+                                    <p><strong>👤 Employee:</strong> Can view all data and manage own certificates</p>
+                                    <p><strong>👑 Admin:</strong> Can create users, manage all certificates, and assign roles</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Status -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.is_active.id_for_label }}">
+                                <span class="label-text font-semibold">Account Status</span>
+                            </label>
+                            <label class="label cursor-pointer justify-start gap-3">
+                                {{ form.is_active }}
+                                <span class="label-text">{{ form.is_active.label }}</span>
+                            </label>
+                            {% if form.is_active.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.is_active.help_text }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div role="alert" class="alert alert-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="text-sm">
+                        <p class="font-semibold">Security Notice:</p>
+                        <p>A temporary password will be auto-generated and shown to you. You are responsible for securely communicating it to the user. They must change it on first login.</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="btn btn-primary flex-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                        </svg>
+                        Create User Account
+                    </button>
+                    <a href="{% url 'dashboard:home' %}" class="btn btn-ghost">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="mt-6 p-6 bg-base-200 rounded-lg">
+        <h3 class="font-semibold mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+            </svg>
+            Best Practices
+        </h3>
+        <ul class="text-sm text-base-content/70 space-y-2 ml-7">
+            <li>✓ Use official company email addresses only</li>
+            <li>✓ Assign appropriate roles based on job responsibilities</li>
+            <li>✓ Include department and position for better organization</li>
+            <li>✓ Communicate credentials securely (phone, in-person, or secure messaging)</li>
+            <li>✓ Verify user identity before sharing login credentials</li>
+            <li>✓ Users can update their profile information after first login</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

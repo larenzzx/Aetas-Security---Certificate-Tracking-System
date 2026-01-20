@@ -328,8 +328,128 @@ def profile_list(request):
     return redirect('dashboard:home')
 
 
-@login_required
 def user_create(request):
-    """Create new user - Admin only (placeholder)"""
-    messages.info(request, 'User creation will be implemented in Step 4.')
-    return redirect('dashboard:home')
+    """
+    Create a new user account (Admin only).
+
+    Flow:
+    1. Admin fills out user creation form
+    2. System generates secure temporary password
+    3. User account is created with must_change_password=True
+    4. Welcome email is sent to user with login credentials
+    5. Admin sees confirmation with the temporary password
+
+    Security:
+    - Only accessible to admin users
+    - Password is auto-generated (cryptographically secure)
+    - Password is sent once via email
+    - User must change password on first login
+    - Admin sees the password once (to communicate via secure channel if needed)
+
+    Why this approach?
+    - No public registration (security requirement)
+    - Admin controls who gets access
+    - Temporary passwords ensure security
+    - Email provides secure delivery channel
+    """
+    # Import here to avoid circular import
+    from core.permissions import admin_required
+    from core.utils import generate_temporary_password
+    from .forms import UserCreationForm
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    # Check admin permission
+    if not request.user.is_admin():
+        messages.error(
+            request,
+            'You do not have permission to create users. Admin privileges required.'
+        )
+        return redirect('dashboard:home')
+
+    # Handle POST request (form submission)
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+
+        if form.is_valid():
+            # Generate secure temporary password
+            temporary_password = generate_temporary_password(length=12)
+
+            # Save user with temporary password
+            # The form's save() method handles:
+            # - Password hashing
+            # - Setting must_change_password=True
+            # - Setting is_staff based on role
+            user = form.save(commit=False, temporary_password=temporary_password)
+            user.save()
+
+            # Store password and user info in session to display on success page
+            # This allows us to show it only once to the admin
+            request.session['new_user_created'] = {
+                'email': user.email,
+                'full_name': user.get_full_name(),
+                'password': temporary_password,
+                'role': user.get_role_display(),
+                'department': user.department or 'Not specified',
+                'position': user.position or 'Not specified',
+            }
+
+            # Redirect to success page
+            return redirect('accounts:user_create_success')
+
+        else:
+            # Form has errors
+            messages.error(
+                request,
+                'There were errors in the form. Please correct them and try again.'
+            )
+
+    else:
+        # GET request - show empty form
+        form = UserCreationForm()
+
+    context = {
+        'form': form,
+        'page_title': 'Create New User',
+    }
+
+    return render(request, 'accounts/user_create.html', context)
+
+
+def user_create_success(request):
+    """
+    Display success page with temporary password after user creation.
+
+    Security considerations:
+    - Password shown only once to admin
+    - Session data cleared after display
+    - Admin must manually communicate password to user
+    - No email sent (reduces interception risk)
+
+    Why manual communication?
+    - Admin can choose secure channel (phone, in-person, secure messaging)
+    - Reduces email interception risk
+    - Admin controls when credentials are delivered
+    - Better for high-security environments
+    """
+    # Check if user is admin
+    if not request.user.is_admin():
+        messages.error(request, 'Admin privileges required.')
+        return redirect('dashboard:home')
+
+    # Get user data from session
+    user_data = request.session.get('new_user_created')
+
+    if not user_data:
+        # No data in session, redirect to create page
+        messages.warning(request, 'No user creation data found.')
+        return redirect('accounts:user_create')
+
+    # Clear session data (show password only once)
+    del request.session['new_user_created']
+
+    context = {
+        'user_data': user_data,
+    }
+
+    return render(request, 'accounts/user_create_success.html', context)

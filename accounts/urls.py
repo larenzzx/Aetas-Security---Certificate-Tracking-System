@@ -75,4 +75,5 @@ urlpatterns = [
 
     # Create new user (Admin only)
     path('users/create/', views.user_create, name='user_create'),
+    path('users/create/success/', views.user_create_success, name='user_create_success'),
 ]
