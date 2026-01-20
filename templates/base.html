@@ -1,3 +1,4 @@
+{% load permission_tags %}
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -99,7 +100,7 @@
                         <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                             <li class="menu-title">
                                 <span>{{ user.get_full_name }}</span>
-                                <span class="badge badge-sm {% if user.is_admin %}badge-error{% else %}badge-primary{% endif %}">
+                                <span class="badge badge-sm {{ user.role|get_role_badge_class }}">
                                     {{ user.get_role_display }}
                                 </span>
                             </li>
@@ -167,7 +168,7 @@
                         </div>
                         <div class="flex-1">
                             <div class="font-semibold">{{ user.get_full_name }}</div>
-                            <div class="badge badge-sm {% if user.is_admin %}badge-error{% else %}badge-primary{% endif %}">
+                            <div class="badge badge-sm {{ user.role|get_role_badge_class }}">
                                 {{ user.get_role_display }}
                             </div>
                         </div>

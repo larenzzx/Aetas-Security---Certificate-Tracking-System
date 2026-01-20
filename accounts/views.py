@@ -328,6 +328,7 @@ def profile_list(request):
     return redirect('dashboard:home')
 
 
+@login_required
 def user_create(request):
     """
     Create a new user account (Admin only).
@@ -340,7 +341,7 @@ def user_create(request):
     5. Admin sees confirmation with the temporary password
 
     Security:
-    - Only accessible to admin users
+    - Only accessible to admin users (checked via decorator)
     - Password is auto-generated (cryptographically secure)
     - Password is sent once via email
     - User must change password on first login
@@ -353,7 +354,6 @@ def user_create(request):
     - Email provides secure delivery channel
     """
     # Import here to avoid circular import
-    from core.permissions import admin_required
     from core.utils import generate_temporary_password
     from .forms import UserCreationForm
     from django.core.mail import send_mail
@@ -416,6 +416,7 @@ def user_create(request):
     return render(request, 'accounts/user_create.html', context)
 
 
+@login_required
 def user_create_success(request):
     """
     Display success page with temporary password after user creation.

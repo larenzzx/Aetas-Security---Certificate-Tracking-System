@@ -87,7 +87,7 @@ def employee_or_admin_required(view_func):
     return wrapper
 
 
-def owner_or_admin_required(model_field='user'):
+def owner_or_admin_required(get_object_func, owner_field='user'):
     """
     Decorator to require ownership of a resource or admin role.
 
@@ -96,40 +96,50 @@ def owner_or_admin_required(model_field='user'):
 
     How it works:
     1. User must be logged in
-    2. User must either:
+    2. Retrieve the object using get_object_func
+    3. User must either:
        - Own the resource (resource.user == request.user), OR
        - Be an admin
-    3. If neither, deny access
+    4. If neither, deny access with 403 Forbidden
 
     Args:
-        model_field (str): Name of the field that stores the owner
+        get_object_func (callable): Function that takes (request, *args, **kwargs)
+                                   and returns the object to check
+        owner_field (str): Name of the field that stores the owner
                           (default: 'user')
 
     Usage:
-        @owner_or_admin_required('owner')  # if field is named 'owner'
+        def get_certificate(request, certificate_id):
+            return get_object_or_404(Certificate, id=certificate_id)
+
+        @owner_or_admin_required(get_certificate, 'owner')
         def edit_certificate(request, certificate_id):
-            certificate = get_object_or_404(Certificate, id=certificate_id)
+            certificate = get_certificate(request, certificate_id)
             # Only certificate owner or admin can edit
             pass
 
-        @owner_or_admin_required()  # uses default 'user' field
-        def edit_profile(request, user_id):
-            user = get_object_or_404(User, id=user_id)
-            # Only the user themselves or admin can edit
-            pass
-
     Note:
-    - The resource object must be retrieved in the view
-    - This decorator should be used with get_object_or_404
-    - The view must have the object in scope when the check happens
+    - The get_object_func should handle 404 errors (use get_object_or_404)
+    - The object is retrieved once and permission checked
+    - Returns 403 Forbidden if permission denied
     """
     def decorator(view_func):
         @wraps(view_func)
         @login_required
         def wrapper(request, *args, **kwargs):
-            # The view function needs to handle the permission check
-            # This is a placeholder for Step 7 (Certificate CRUD)
-            # The actual implementation will check object ownership
+            # Get the object
+            obj = get_object_func(request, *args, **kwargs)
+
+            # Check permission using helper function
+            if not check_object_permission(request, obj, owner_field):
+                messages.error(
+                    request,
+                    'You do not have permission to access this resource. '
+                    'Only the owner or an admin can perform this action.'
+                )
+                return redirect('dashboard:home')
+
+            # Permission granted, execute view
             return view_func(request, *args, **kwargs)
 
         return wrapper
