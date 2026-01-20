@@ -1,5 +1,5 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import (
     PasswordResetView,
@@ -680,14 +680,19 @@ def user_delete(request, user_id):
     - Only admins can delete users
     - Cannot delete own account (prevents admin lockout)
     - Cannot delete superuser accounts (system protection)
-    - Soft delete approach (can be modified to hard delete if needed)
     - Confirmation required before deletion
+    - All actions logged for audit trail
 
     Cascading effects:
-    - User's certificates are preserved (reassign if needed)
-    - User's profile data deleted
+    - User's certificates are ALSO DELETED (CASCADE delete)
+    - User's profile image deleted from filesystem
     - User's authentication credentials removed
+    - All associated data removed
     """
+    from core.audit_log import log_user_deleted, log_security_event
+    import logging
+
+    logger = logging.getLogger('audit')
     User = get_user_model()
 
     # Check if user is admin
@@ -708,28 +713,71 @@ def user_delete(request, user_id):
         messages.error(request, 'Cannot delete superuser accounts.')
         return redirect('accounts:profile_list')
 
+    # Count associated certificates (will be deleted due to CASCADE)
+    from certificates.models import Certificate
+    certificate_count = Certificate.objects.filter(user=user_to_delete).count()
+
     if request.method == 'POST':
-        # Get user info before deletion
-        user_name = user_to_delete.get_full_name()
-        user_email = user_to_delete.email
+        try:
+            # Get user info before deletion (for logging)
+            user_info = {
+                'id': user_to_delete.id,
+                'email': user_to_delete.email,
+                'name': user_to_delete.get_full_name(),
+                'certificate_count': certificate_count
+            }
 
-        # Delete profile image if exists
-        if user_to_delete.profile_image:
-            user_to_delete.profile_image.delete(save=False)
+            user_name = user_to_delete.get_full_name()
+            user_email = user_to_delete.email
 
-        # Delete the user
-        user_to_delete.delete()
+            # Delete profile image if exists
+            if user_to_delete.profile_image:
+                try:
+                    user_to_delete.profile_image.delete(save=False)
+                except Exception as e:
+                    logger.warning(f'Could not delete profile image for {user_email}: {str(e)}')
 
-        messages.success(
-            request,
-            f'User account for {user_name} ({user_email}) has been deleted successfully.'
-        )
+            # Delete the user (CASCADE will delete certificates)
+            user_to_delete.delete()
 
-        return redirect('accounts:profile_list')
+            # Log the deletion
+            log_user_deleted(request, user_info, request.user)
 
-    # If GET request, show confirmation page
+            # Success message with certificate count
+            if certificate_count > 0:
+                messages.success(
+                    request,
+                    f'User account for {user_name} ({user_email}) and {certificate_count} '
+                    f'associated certificate(s) have been deleted successfully.'
+                )
+            else:
+                messages.success(
+                    request,
+                    f'User account for {user_name} ({user_email}) has been deleted successfully.'
+                )
+
+            return redirect('accounts:profile_list')
+
+        except Exception as e:
+            # Log the error
+            logger.error(f'Error deleting user {user_to_delete.email}: {str(e)}')
+            log_security_event(
+                'USER_DELETE_ERROR',
+                f'Failed to delete user {user_to_delete.email}: {str(e)}',
+                user=request.user
+            )
+
+            messages.error(
+                request,
+                f'An error occurred while deleting the user: {str(e)}. '
+                'Please check the logs or contact support.'
+            )
+            return redirect('accounts:profile_list')
+
+    # If GET request, show confirmation page with certificate count
     context = {
         'user_to_delete': user_to_delete,
+        'certificate_count': certificate_count,
     }
 
     return render(request, 'accounts/user_delete_confirm.html', context)

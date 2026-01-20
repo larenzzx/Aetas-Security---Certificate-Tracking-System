@@ -1,0 +1,31 @@
+# Security Dependencies for Aetas Security Certificate Tracking System
+# Install with: pip install -r requirements_security.txt
+
+# File type detection and validation
+python-magic==0.4.27
+python-magic-bin==0.4.14; sys_platform == 'win32'
+
+# Image processing and validation
+Pillow==10.2.0
+
+# Note: These packages are required for the security features implemented in Step 12:
+# - python-magic: MIME type detection for secure file uploads
+# - python-magic-bin: Windows binaries for python-magic
+# - Pillow: Image validation and processing
+
+# Installation Instructions:
+# -------------------------
+# All platforms:
+#   pip install -r requirements_security.txt
+#
+# Linux (Ubuntu/Debian):
+#   sudo apt-get install libmagic1
+#   pip install -r requirements_security.txt
+#
+# macOS:
+#   brew install libmagic
+#   pip install -r requirements_security.txt
+#
+# Windows:
+#   pip install -r requirements_security.txt
+#   (python-magic-bin includes the necessary DLLs)

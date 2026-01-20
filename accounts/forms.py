@@ -320,47 +320,30 @@ class UserUpdateForm(forms.ModelForm):
 
     def clean_profile_image(self):
         """
-        Validate uploaded profile image.
+        Validate uploaded profile image with comprehensive security checks.
 
         Checks:
         - File size (max 5MB)
         - File type (JPEG, PNG, WebP)
-        - Image dimensions (optional)
+        - MIME type verification
+        - Image dimensions
+        - File integrity
 
         Returns:
-            File: Cleaned image file
+            File: Cleaned and validated image file
 
         Raises:
-            ValidationError: If image doesn't meet requirements
+            ValidationError: If image doesn't meet security requirements
         """
+        from core.validators import validate_image_file
+
         image = self.cleaned_data.get('profile_image')
 
         if not image:
             return image
 
-        # Check file size (5MB max)
-        max_size = 5 * 1024 * 1024  # 5MB in bytes
-        if image.size > max_size:
-            raise ValidationError(
-                f'Image file size cannot exceed 5MB. '
-                f'Your file is {image.size / (1024 * 1024):.1f}MB.'
-            )
-
-        # Check file type
-        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-        if hasattr(image, 'content_type'):
-            if image.content_type not in allowed_types:
-                raise ValidationError(
-                    'Invalid image format. Please upload a JPG, PNG, or WebP image.'
-                )
-
-        # Check file extension
-        if hasattr(image, 'name'):
-            ext = image.name.lower().split('.')[-1]
-            if ext not in ['jpg', 'jpeg', 'png', 'webp']:
-                raise ValidationError(
-                    'Invalid file extension. Allowed: jpg, jpeg, png, webp'
-                )
+        # Use comprehensive validator with security checks
+        validate_image_file(image)
 
         return image
 

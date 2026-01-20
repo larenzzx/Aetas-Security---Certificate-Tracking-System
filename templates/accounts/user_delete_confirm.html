@@ -79,11 +79,35 @@
                             <li>This user account will be permanently deleted</li>
                             <li>The user will no longer be able to log in</li>
                             <li>User's profile information will be removed</li>
-                            <li>Associated certificates will remain in the system</li>
+                            {% if certificate_count > 0 %}
+                            <li><strong class="text-error">{{ certificate_count }} certificate(s) will also be DELETED</strong></li>
+                            {% else %}
+                            <li>No certificates are associated with this user</li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>
             </div>
+
+            {% if certificate_count > 0 %}
+            <!-- Certificate Warning (if user has certificates) -->
+            <div class="alert alert-error mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold">Certificate Deletion Warning!</h3>
+                    <div class="text-sm mt-1">
+                        <p>This user has <strong>{{ certificate_count }} certificate(s)</strong> that will be permanently deleted along with the user account.</p>
+                        <p class="mt-2">If you need to preserve these certificates, you should cancel this deletion and either:</p>
+                        <ul class="list-disc list-inside mt-1">
+                            <li>Export the certificate data first</li>
+                            <li>Reassign the certificates to another employee</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Action Buttons -->
             <div class="card-actions justify-end gap-2">
@@ -107,14 +131,20 @@
     </div>
 
     <!-- Additional Information -->
+    {% if certificate_count > 0 %}
     <div class="alert alert-info mt-6">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <div>
-            <h3 class="font-bold">Need to reassign certificates?</h3>
-            <p class="text-sm">If this user has certificates that need to be transferred to another employee, please do so before deleting the account.</p>
+            <h3 class="font-bold">Certificate Data Preservation</h3>
+            <p class="text-sm">
+                To preserve certificate records, you can use the DataTables export feature on the
+                <a href="{% url 'certificates:list' %}" class="link link-primary">Certificates page</a>
+                to export this user's certificates to CSV, Excel, or PDF before deletion.
+            </p>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

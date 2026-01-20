@@ -79,7 +79,11 @@
                                 <div class="flex items-center gap-2">
                                     <div class="avatar placeholder">
                                         <div class="bg-neutral text-neutral-content rounded-full w-10">
-                                            <span class="text-sm">{{ employee.first_name.0 }}{{ employee.last_name.0 }}</span>
+                                            {% if employee.profile_image %}
+                                                <img src="{{ employee.profile_image.url }}" alt="{{ employee.get_full_name }}" />
+                                            {% else %}
+                                                <span class="text-sm">{{ employee.first_name.0 }}{{ employee.last_name.0 }}</span>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div>
