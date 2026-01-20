@@ -9,7 +9,13 @@ Security validators for:
 - Size validation
 """
 
-import magic  # python-magic library for file type detection
+# Try to import python-magic, fall back to basic validation if not available
+try:
+    import magic
+    MAGIC_AVAILABLE = True
+except ImportError:
+    MAGIC_AVAILABLE = False
+
 from django.core.exceptions import ValidationError
 from django.core.files.images import get_image_dimensions
 from PIL import Image
@@ -80,29 +86,44 @@ def validate_image_file(value):
     validate_file_size(value, max_size_mb=5)
 
     # 3. MIME type validation
-    try:
-        # Read first 1024 bytes for magic number detection
-        file_content = value.read(1024)
-        value.seek(0)  # Reset file pointer
+    if MAGIC_AVAILABLE:
+        try:
+            # Read first 1024 bytes for magic number detection
+            file_content = value.read(1024)
+            value.seek(0)  # Reset file pointer
 
-        # Detect MIME type
-        mime = magic.from_buffer(file_content, mime=True)
+            # Detect MIME type
+            mime = magic.from_buffer(file_content, mime=True)
 
-        # Allowed MIME types
-        allowed_mimes = [
-            'image/jpeg',
-            'image/png',
-            'image/webp'
-        ]
+            # Allowed MIME types
+            allowed_mimes = [
+                'image/jpeg',
+                'image/png',
+                'image/webp'
+            ]
 
-        if mime not in allowed_mimes:
-            raise ValidationError(
-                f'Invalid image file. File appears to be: {mime}. '
-                f'Only JPG, PNG, and WebP images are allowed.'
-            )
+            if mime not in allowed_mimes:
+                raise ValidationError(
+                    f'Invalid image file. File appears to be: {mime}. '
+                    f'Only JPG, PNG, and WebP images are allowed.'
+                )
 
-    except Exception as e:
-        raise ValidationError(f'Could not validate file type: {str(e)}')
+        except Exception as e:
+            raise ValidationError(f'Could not validate file type: {str(e)}')
+    else:
+        # Fallback: Basic content-type check from uploaded file
+        if hasattr(value, 'content_type'):
+            allowed_content_types = [
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'image/webp'
+            ]
+            if value.content_type not in allowed_content_types:
+                raise ValidationError(
+                    f'Invalid image file type: {value.content_type}. '
+                    f'Only JPG, PNG, and WebP images are allowed.'
+                )
 
     # 4. Image dimensions validation
     try:
