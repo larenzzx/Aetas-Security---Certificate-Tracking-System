@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Profile - {{ user_to_edit.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Breadcrumb Navigation -->
+    <div class="text-sm breadcrumbs mb-4">
+        <ul>
+            <li><a href="{% url 'accounts:profile_list' %}">Employees</a></li>
+            <li><a href="{% url 'accounts:profile_detail' user_to_edit.pk %}">{{ user_to_edit.get_full_name }}</a></li>
+            <li>Edit Profile</li>
+        </ul>
+    </div>
+
+    <!-- Page Header -->
+    <div class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Edit Profile</h1>
+                    <p class="text-base-content/60 mt-2">
+                        {% if is_own_profile %}
+                            Update your personal information and profile photo
+                        {% else %}
+                            Editing profile for {{ user_to_edit.get_full_name }}
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'accounts:profile_detail' user_to_edit.pk %}" class="btn btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Profile Photo -->
+            <div class="lg:col-span-1">
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title">Profile Photo</h2>
+
+                        <!-- Current Profile Photo -->
+                        <div class="flex justify-center my-4">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral text-neutral-content rounded-full w-32" id="avatar-preview">
+                                    {% if user_to_edit.profile_image %}
+                                        <img src="{{ user_to_edit.profile_image.url }}" alt="{{ user_to_edit.get_full_name }}" id="current-photo" />
+                                    {% else %}
+                                        <span class="text-5xl" id="initials-text">{{ user_to_edit.first_name.0 }}{{ user_to_edit.last_name.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload New Photo -->
+                        <div class="form-control">
+                            <label class="label" for="{{ form.profile_image.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.profile_image.label }}</span>
+                            </label>
+                            {{ form.profile_image }}
+                            {% if form.profile_image.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.profile_image.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                            {% if form.profile_image.help_text %}
+                                <label class="label">
+                                    <span class="label-text-alt text-base-content/60">{{ form.profile_image.help_text }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Remove Photo Checkbox -->
+                        {% if user_to_edit.profile_image %}
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-2">
+                                {{ form.remove_profile_image }}
+                                <span class="label-text">{{ form.remove_profile_image.label }}</span>
+                            </label>
+                            {% if form.remove_profile_image.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.remove_profile_image.help_text }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="alert alert-info mt-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="text-sm">
+                                <p><strong>Tip:</strong> Use a square photo for best results.</p>
+                                <p>Recommended: 400x400px or larger</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Personal Information -->
+            <div class="lg:col-span-2">
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title mb-4">Personal Information</h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- First Name -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.first_name.id_for_label }}">
+                                    <span class="label-text font-semibold">{{ form.first_name.label }} *</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
+                                </label>
+                                {% endif %}
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.last_name.id_for_label }}">
+                                    <span class="label-text font-semibold">{{ form.last_name.label }} *</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
+                                </label>
+                                {% endif %}
+                            </div>
+
+                            <!-- Department -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.department.id_for_label }}">
+                                    <span class="label-text font-semibold">{{ form.department.label }}</span>
+                                </label>
+                                {{ form.department }}
+                                {% if form.department.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.department.errors.0 }}</span>
+                                </label>
+                                {% endif %}
+                                {% if form.department.help_text %}
+                                <label class="label">
+                                    <span class="label-text-alt text-base-content/60">{{ form.department.help_text }}</span>
+                                </label>
+                                {% endif %}
+                            </div>
+
+                            <!-- Position -->
+                            <div class="form-control">
+                                <label class="label" for="{{ form.position.id_for_label }}">
+                                    <span class="label-text font-semibold">{{ form.position.label }}</span>
+                                </label>
+                                {{ form.position }}
+                                {% if form.position.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.position.errors.0 }}</span>
+                                </label>
+                                {% endif %}
+                                {% if form.position.help_text %}
+                                <label class="label">
+                                    <span class="label-text-alt text-base-content/60">{{ form.position.help_text }}</span>
+                                </label>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <!-- Form Actions -->
+                        <div class="card-actions justify-end gap-2">
+                            <a href="{% url 'accounts:profile_detail' user_to_edit.pk %}" class="btn btn-ghost">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript for Image Preview -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.profile_image.id_for_label }}');
+    const removeCheckbox = document.getElementById('{{ form.remove_profile_image.id_for_label }}');
+    const avatarPreview = document.getElementById('avatar-preview');
+
+    // Image preview on file selection
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size cannot exceed 5MB. Please choose a smaller image.');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // Validate file type
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please upload a JPG, PNG, or WebP image.');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    avatarPreview.innerHTML = '<img src="' + event.target.result + '" alt="Preview" class="rounded-full" />';
+                };
+                reader.readAsDataURL(file);
+
+                // Uncheck remove checkbox
+                if (removeCheckbox) {
+                    removeCheckbox.checked = false;
+                }
+            }
+        });
+    }
+
+    // Handle remove checkbox
+    if (removeCheckbox) {
+        removeCheckbox.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                // Show initials when removing photo
+                const initials = '{{ user_to_edit.first_name.0 }}{{ user_to_edit.last_name.0 }}';
+                avatarPreview.innerHTML = '<span class="text-5xl">' + initials + '</span>';
+
+                // Clear file input
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+            } else {
+                // Restore current photo
+                {% if user_to_edit.profile_image %}
+                avatarPreview.innerHTML = '<img src="{{ user_to_edit.profile_image.url }}" alt="{{ user_to_edit.get_full_name }}" />';
+                {% endif %}
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -70,6 +70,9 @@ urlpatterns = [
     # View user profile
     path('profile/<int:user_id>/', views.profile_detail, name='profile_detail'),
 
+    # Edit user profile
+    path('profile/<int:user_id>/edit/', views.profile_edit, name='profile_edit'),
+
     # View all employees
     path('employees/', views.profile_list, name='profile_list'),
 

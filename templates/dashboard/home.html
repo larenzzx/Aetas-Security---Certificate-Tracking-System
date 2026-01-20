@@ -1,34 +1,17 @@
 {% extends "base.html" %}
+{% load permission_tags %}
 
-{% block title %}Dashboard - Certificate Tracking System{% endblock %}
+{% block title %}Dashboard - Aetas Security{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="max-w-7xl mx-auto space-y-6">
     <!-- Page Header -->
     <div>
-        <h1 class="text-3xl font-bold">Dashboard</h1>
-        <p class="text-base-content/60 mt-2">Welcome to the Certificate Tracking System</p>
+        <h1 class="text-3xl font-bold">Aetas Security Dashboard</h1>
+        <p class="text-base-content/60 mt-2">Certification tracking and employee management overview</p>
     </div>
 
-    <!-- Placeholder Message -->
-    <div class="card bg-base-100 shadow-xl">
-        <div class="card-body">
-            <div class="flex items-center gap-4">
-                <div class="text-6xl">📊</div>
-                <div>
-                    <h2 class="card-title text-2xl">Dashboard Coming Soon</h2>
-                    <p class="text-base-content/70 mt-2">
-                        The dashboard with analytics, charts, and statistics will be implemented in Step 9.
-                    </p>
-                    <p class="text-sm text-base-content/60 mt-2">
-                        This will include total employees, certificates, skill distribution, and more.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Stats (Placeholder) -->
+    <!-- Key Performance Indicators -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="stat bg-base-100 shadow-xl rounded-lg">
             <div class="stat-figure text-primary">
@@ -37,8 +20,8 @@
                 </svg>
             </div>
             <div class="stat-title">Total Employees</div>
-            <div class="stat-value text-primary">—</div>
-            <div class="stat-desc">Coming in Step 9</div>
+            <div class="stat-value text-primary">{{ total_employees }}</div>
+            <div class="stat-desc"><a href="{% url 'accounts:profile_list' %}" class="link">View all employees</a></div>
         </div>
 
         <div class="stat bg-base-100 shadow-xl rounded-lg">
@@ -48,8 +31,8 @@
                 </svg>
             </div>
             <div class="stat-title">Total Certificates</div>
-            <div class="stat-value text-secondary">—</div>
-            <div class="stat-desc">Coming in Step 9</div>
+            <div class="stat-value text-secondary">{{ total_certificates }}</div>
+            <div class="stat-desc"><a href="{% url 'certificates:list' %}" class="link">View all certificates</a></div>
         </div>
 
         <div class="stat bg-base-100 shadow-xl rounded-lg">
@@ -59,8 +42,8 @@
                 </svg>
             </div>
             <div class="stat-title">Active Certificates</div>
-            <div class="stat-value text-success">—</div>
-            <div class="stat-desc">Coming in Step 9</div>
+            <div class="stat-value text-success">{{ active_certificates }}</div>
+            <div class="stat-desc">Currently valid</div>
         </div>
 
         <div class="stat bg-base-100 shadow-xl rounded-lg">
@@ -70,9 +53,294 @@
                 </svg>
             </div>
             <div class="stat-title">Expiring Soon</div>
-            <div class="stat-value text-warning">—</div>
-            <div class="stat-desc">Coming in Step 9</div>
+            <div class="stat-value text-warning">{{ expiring_soon_count }}</div>
+            <div class="stat-desc">Next 90 days</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Certificate Status Distribution Chart -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Certificate Status Distribution</h2>
+                <div class="h-64 flex items-center justify-center">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificates by Provider Chart -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">Top 10 Providers</h2>
+                <div class="h-64 flex items-center justify-center">
+                    <canvas id="providerChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Timeline Chart -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">Certificate Issuance Timeline (Last 12 Months)</h2>
+            <div class="h-64">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Widgets -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Expiring Soon Widget -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    Certificates Expiring Soon
+                </h2>
+                {% if expiring_soon_list %}
+                <div class="space-y-3">
+                    {% for cert in expiring_soon_list %}
+                    <div class="border border-base-300 rounded-lg p-3">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="font-semibold">{{ cert.name }}</div>
+                                <div class="text-sm text-base-content/60">
+                                    {{ cert.user.get_full_name }} • {{ cert.provider.name }}
+                                </div>
+                                <div class="text-sm mt-1">
+                                    <span class="badge badge-warning">{{ cert.days_until_expiry }} days left</span>
+                                </div>
+                            </div>
+                            <a href="{% url 'certificates:detail' cert.pk %}" class="btn btn-ghost btn-xs">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if expiring_soon_count > 5 %}
+                <div class="mt-4 text-center">
+                    <p class="text-sm text-base-content/60">
+                        Showing 5 of {{ expiring_soon_count }} expiring certificates
+                    </p>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-8 text-base-content/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto mb-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>No certificates expiring in the next 90 days</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Top Certified Employees Widget -->
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+                    </svg>
+                    Top Certified Employees
+                </h2>
+                {% if top_employees %}
+                <div class="space-y-3">
+                    {% for employee in top_employees %}
+                    <div class="flex items-center justify-between border border-base-300 rounded-lg p-3">
+                        <div class="flex items-center gap-3">
+                            <div class="avatar placeholder">
+                                <div class="bg-primary text-primary-content rounded-full w-10">
+                                    <span class="text-sm">{{ employee.first_name.0 }}{{ employee.last_name.0 }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="font-semibold">{{ employee.get_full_name }}</div>
+                                <div class="text-sm text-base-content/60">{{ employee.department|default:"N/A" }}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="badge badge-primary">{{ employee.cert_count }}</span>
+                            <a href="{% url 'accounts:profile_detail' employee.pk %}" class="btn btn-ghost btn-xs">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-base-content/50">
+                    <p>No employees with certificates yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Certificates -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">Recently Added Certificates</h2>
+            {% if recent_certificates %}
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Certificate</th>
+                            <th>Employee</th>
+                            <th>Provider</th>
+                            <th>Issue Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in recent_certificates %}
+                        <tr>
+                            <td>{{ cert.name }}</td>
+                            <td>{{ cert.user.get_full_name }}</td>
+                            <td>{{ cert.provider.name }}</td>
+                            <td>{{ cert.issue_date|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'certificates:detail' cert.pk %}" class="btn btn-ghost btn-xs">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-base-content/50">
+                <p>No certificates added yet</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Chart.js Scripts -->
+<script>
+// Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+    // ===========================================
+    // CHART 1: Certificate Status Distribution
+    // ===========================================
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ status_chart_labels|safe }},
+                datasets: [{
+                    data: {{ status_chart_data|safe }},
+                    backgroundColor: {{ status_chart_colors|safe }},
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // ===========================================
+    // CHART 2: Certificates by Provider
+    // ===========================================
+    const providerCtx = document.getElementById('providerChart');
+    if (providerCtx) {
+        new Chart(providerCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ provider_chart_labels|safe }},
+                datasets: [{
+                    label: 'Certificates',
+                    data: {{ provider_chart_data|safe }},
+                    backgroundColor: '#3b82f6',
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                indexAxis: 'y', // Horizontal bar chart
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ===========================================
+    // CHART 3: Certificate Issuance Timeline
+    // ===========================================
+    const timelineCtx = document.getElementById('timelineChart');
+    if (timelineCtx) {
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ timeline_chart_labels|safe }},
+                datasets: [{
+                    label: 'Certificates Issued',
+                    data: {{ timeline_chart_data|safe }},
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -591,3 +591,81 @@ def user_create_success(request):
     }
 
     return render(request, 'accounts/user_create_success.html', context)
+
+
+@login_required
+def profile_edit(request, user_id):
+    """
+    Edit user profile (personal information and profile photo).
+
+    Accessible by:
+    - The user themselves (own profile)
+    - Admin users (any profile)
+
+    Features:
+    - Update personal information (name, department, position)
+    - Upload profile photo (JPG, PNG, WebP)
+    - Remove profile photo (revert to initials)
+    - Image validation (size, format)
+
+    Security:
+    - Permission check: user can only edit own profile or admin can edit any
+    - Image validation to prevent malicious uploads
+    - File size limit (5MB)
+
+    Performance:
+    - Old profile images are deleted when replaced
+    - Optimized file storage by year/month
+    """
+    from django.shortcuts import get_object_or_404
+    from django.contrib.auth import get_user_model
+    from .forms import UserUpdateForm
+
+    User = get_user_model()
+
+    # Get the user to edit
+    user_to_edit = get_object_or_404(User, pk=user_id)
+
+    # Permission check: can only edit own profile or must be admin
+    if not (request.user.id == user_to_edit.id or request.user.is_admin()):
+        messages.error(
+            request,
+            'You do not have permission to edit this profile.'
+        )
+        return redirect('accounts:profile_detail', user_id=user_id)
+
+    if request.method == 'POST':
+        form = UserUpdateForm(
+            request.POST,
+            request.FILES,  # Important for file uploads
+            instance=user_to_edit
+        )
+
+        if form.is_valid():
+            # Save the form
+            user = form.save()
+
+            messages.success(
+                request,
+                f'Profile updated successfully for {user.get_full_name()}!'
+            )
+
+            # Redirect to profile detail page
+            return redirect('accounts:profile_detail', user_id=user.id)
+        else:
+            messages.error(
+                request,
+                'There were errors in the form. Please correct them and try again.'
+            )
+    else:
+        # GET request - show form with current data
+        form = UserUpdateForm(instance=user_to_edit)
+
+    context = {
+        'form': form,
+        'user_to_edit': user_to_edit,
+        'is_own_profile': request.user.id == user_to_edit.id,
+        'is_admin': request.user.is_admin(),
+    }
+
+    return render(request, 'accounts/profile_edit.html', context)

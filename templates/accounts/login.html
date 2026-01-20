@@ -1,7 +1,7 @@
 {% extends "accounts/base_auth.html" %}
 
-{% block title %}Login - Certificate Tracking System{% endblock %}
-{% block subtitle %}Sign in to access your certificates{% endblock %}
+{% block title %}Login - Aetas Security{% endblock %}
+{% block subtitle %}Sign in to manage your certifications{% endblock %}
 
 {% block form_content %}
 <h2 class="card-title text-2xl mb-6">Sign In</h2>
@@ -25,7 +25,7 @@
                 name="username"
                 id="id_username"
                 class="input input-bordered w-full pl-10 {% if form.username.errors %}input-error{% endif %}"
-                placeholder="your.email@company.com"
+                placeholder="your.email@aetassecurity.com"
                 value="{{ form.username.value|default:'' }}"
                 required
                 autofocus

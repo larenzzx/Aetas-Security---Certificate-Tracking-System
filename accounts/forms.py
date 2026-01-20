@@ -228,8 +228,22 @@ class UserUpdateForm(forms.ModelForm):
     - Users to update their own profile (limited fields)
     - Admins to update any user profile (all fields)
 
-    This is a placeholder for Step 8 (Profile Management).
+    Features:
+    - Profile photo upload with validation
+    - Personal information updates
+    - Department and position management
+    - Image size and format validation
     """
+
+    # Add a checkbox to remove profile image
+    remove_profile_image = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'checkbox checkbox-error',
+        }),
+        label='Remove current profile photo',
+        help_text='Check this to remove your profile photo and revert to initials'
+    )
 
     class Meta:
         model = User
@@ -242,9 +256,133 @@ class UserUpdateForm(forms.ModelForm):
         ]
 
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
-            'last_name': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
-            'department': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
-            'position': forms.TextInput(attrs={'class': 'input input-bordered w-full'}),
-            'profile_image': forms.FileInput(attrs={'class': 'file-input file-input-bordered w-full'}),
+            'first_name': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'First Name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Last Name'
+            }),
+            'department': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Department or Team'
+            }),
+            'position': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Job Title or Position'
+            }),
+            'profile_image': forms.FileInput(attrs={
+                'class': 'file-input file-input-bordered w-full',
+                'accept': 'image/jpeg,image/png,image/jpg,image/webp'
+            }),
         }
+
+        labels = {
+            'first_name': 'First Name',
+            'last_name': 'Last Name',
+            'department': 'Department',
+            'position': 'Position',
+            'profile_image': 'Profile Photo',
+        }
+
+        help_texts = {
+            'first_name': 'Your first name',
+            'last_name': 'Your last name',
+            'department': 'Optional: Your department or team',
+            'position': 'Optional: Your job title',
+            'profile_image': 'Upload a profile photo (JPG, PNG, or WebP - Max 5MB)',
+        }
+
+    def clean_first_name(self):
+        """Validate and normalize first name."""
+        first_name = self.cleaned_data.get('first_name', '').strip()
+
+        if not first_name:
+            raise ValidationError('First name is required.')
+
+        if len(first_name) < 2:
+            raise ValidationError('First name must be at least 2 characters long.')
+
+        return first_name.title()
+
+    def clean_last_name(self):
+        """Validate and normalize last name."""
+        last_name = self.cleaned_data.get('last_name', '').strip()
+
+        if not last_name:
+            raise ValidationError('Last name is required.')
+
+        if len(last_name) < 2:
+            raise ValidationError('Last name must be at least 2 characters long.')
+
+        return last_name.title()
+
+    def clean_profile_image(self):
+        """
+        Validate uploaded profile image.
+
+        Checks:
+        - File size (max 5MB)
+        - File type (JPEG, PNG, WebP)
+        - Image dimensions (optional)
+
+        Returns:
+            File: Cleaned image file
+
+        Raises:
+            ValidationError: If image doesn't meet requirements
+        """
+        image = self.cleaned_data.get('profile_image')
+
+        if not image:
+            return image
+
+        # Check file size (5MB max)
+        max_size = 5 * 1024 * 1024  # 5MB in bytes
+        if image.size > max_size:
+            raise ValidationError(
+                f'Image file size cannot exceed 5MB. '
+                f'Your file is {image.size / (1024 * 1024):.1f}MB.'
+            )
+
+        # Check file type
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if hasattr(image, 'content_type'):
+            if image.content_type not in allowed_types:
+                raise ValidationError(
+                    'Invalid image format. Please upload a JPG, PNG, or WebP image.'
+                )
+
+        # Check file extension
+        if hasattr(image, 'name'):
+            ext = image.name.lower().split('.')[-1]
+            if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+                raise ValidationError(
+                    'Invalid file extension. Allowed: jpg, jpeg, png, webp'
+                )
+
+        return image
+
+    def save(self, commit=True):
+        """
+        Save the user profile with optional image removal.
+
+        Handles:
+        - Profile image upload
+        - Profile image removal
+        - Personal information updates
+        """
+        user = super().save(commit=False)
+
+        # Handle profile image removal
+        if self.cleaned_data.get('remove_profile_image'):
+            # Delete old image file
+            if user.profile_image:
+                user.profile_image.delete(save=False)
+            user.profile_image = None
+
+        if commit:
+            user.save()
+
+        return user
