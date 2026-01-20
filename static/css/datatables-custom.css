@@ -1,0 +1,450 @@
+/**
+ * Custom DataTables Styling for Aetas Security Certificate Tracking System
+ *
+ * This stylesheet provides custom styling for DataTables integration with:
+ * - Tailwind CSS
+ * - DaisyUI components
+ * - Light/Dark theme support
+ * - Responsive design
+ * - Export buttons
+ */
+
+/* ==============================================
+   TABLE WRAPPER & CONTAINER
+   ============================================== */
+
+.dataTables_wrapper {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Top controls (search, length, buttons) */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 1rem;
+}
+
+/* Bottom controls (info, pagination) */
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+}
+
+/* ==============================================
+   SEARCH INPUT STYLING
+   ============================================== */
+
+.dataTables_filter input {
+    @apply input input-bordered w-full max-w-xs ml-2;
+}
+
+.dataTables_filter label {
+    @apply flex items-center gap-2 text-base-content;
+    font-weight: 500;
+}
+
+/* ==============================================
+   LENGTH MENU STYLING
+   ============================================== */
+
+.dataTables_length select {
+    @apply select select-bordered select-sm mx-2;
+}
+
+.dataTables_length label {
+    @apply flex items-center gap-2 text-base-content;
+    font-weight: 500;
+}
+
+/* ==============================================
+   TABLE STYLING
+   ============================================== */
+
+table.dataTable {
+    width: 100% !important;
+    margin: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Table header */
+table.dataTable thead th {
+    @apply bg-base-300 text-base-content font-semibold;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid oklch(var(--b3));
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Sortable column indicators */
+table.dataTable thead th.sorting,
+table.dataTable thead th.sorting_asc,
+table.dataTable thead th.sorting_desc {
+    cursor: pointer;
+    position: relative;
+    padding-right: 2rem;
+}
+
+table.dataTable thead th.sorting::after,
+table.dataTable thead th.sorting_asc::after,
+table.dataTable thead th.sorting_desc::after {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+    font-size: 0.875rem;
+}
+
+table.dataTable thead th.sorting::after {
+    content: "⇅";
+    opacity: 0.3;
+}
+
+table.dataTable thead th.sorting_asc::after {
+    content: "↑";
+    opacity: 0.9;
+    color: oklch(var(--p));
+}
+
+table.dataTable thead th.sorting_desc::after {
+    content: "↓";
+    opacity: 0.9;
+    color: oklch(var(--p));
+}
+
+/* Table body */
+table.dataTable tbody tr {
+    @apply bg-base-100;
+    border-bottom: 1px solid oklch(var(--b3));
+    transition: background-color 0.2s ease;
+}
+
+table.dataTable tbody tr:hover {
+    @apply bg-base-200;
+}
+
+table.dataTable tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Zebra striping */
+table.dataTable.table-zebra tbody tr:nth-child(even) {
+    @apply bg-base-200;
+}
+
+table.dataTable.table-zebra tbody tr:nth-child(even):hover {
+    @apply bg-base-300;
+}
+
+/* ==============================================
+   PAGINATION STYLING
+   ============================================== */
+
+.dataTables_paginate {
+    @apply flex justify-end items-center gap-2;
+}
+
+.dataTables_paginate .paginate_button {
+    @apply btn btn-sm btn-ghost;
+    min-width: 2.5rem;
+    margin: 0 0.125rem;
+}
+
+.dataTables_paginate .paginate_button.current {
+    @apply btn-primary;
+}
+
+.dataTables_paginate .paginate_button.disabled {
+    @apply btn-disabled;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dataTables_paginate .paginate_button:hover:not(.disabled):not(.current) {
+    @apply bg-base-300;
+}
+
+/* Previous/Next buttons */
+.dataTables_paginate .paginate_button.previous,
+.dataTables_paginate .paginate_button.next {
+    font-weight: 600;
+}
+
+/* ==============================================
+   INFO TEXT STYLING
+   ============================================== */
+
+.dataTables_info {
+    @apply text-base-content/70 text-sm;
+    font-weight: 500;
+}
+
+/* ==============================================
+   PROCESSING INDICATOR
+   ============================================== */
+
+.dataTables_processing {
+    @apply fixed inset-0 bg-base-100/80 flex items-center justify-center z-50;
+}
+
+.dataTables_processing::after {
+    content: "Loading...";
+    @apply text-2xl font-bold text-primary;
+}
+
+/* ==============================================
+   EMPTY STATE
+   ============================================== */
+
+.dataTables_empty {
+    @apply text-center py-12 text-base-content/50;
+}
+
+/* ==============================================
+   EXPORT BUTTONS STYLING
+   ============================================== */
+
+.dt-buttons {
+    @apply flex gap-2 mb-4 flex-wrap;
+}
+
+.dt-button {
+    @apply btn btn-sm btn-outline;
+}
+
+.dt-button:hover {
+    @apply btn-primary;
+}
+
+.dt-button-collection {
+    @apply dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52;
+}
+
+/* ==============================================
+   RESPONSIVE FEATURES
+   ============================================== */
+
+/* Responsive control column */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control {
+    position: relative;
+    padding-left: 2rem;
+    cursor: pointer;
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control::before {
+    content: "+";
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    @apply btn btn-xs btn-circle btn-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-weight: bold;
+}
+
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control::before,
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::before {
+    content: "-";
+    @apply btn-secondary;
+}
+
+/* Child row styling */
+table.dataTable > tbody > tr.child ul.dtr-details {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+table.dataTable > tbody > tr.child ul.dtr-details > li {
+    @apply border-b border-base-300 py-2;
+}
+
+table.dataTable > tbody > tr.child ul.dtr-details > li:last-child {
+    border-bottom: none;
+}
+
+table.dataTable > tbody > tr.child span.dtr-title {
+    @apply font-semibold text-base-content;
+    display: inline-block;
+    min-width: 120px;
+}
+
+table.dataTable > tbody > tr.child span.dtr-data {
+    @apply text-base-content/80;
+}
+
+/* ==============================================
+   COLUMN VISIBILITY BUTTON
+   ============================================== */
+
+.buttons-colvis {
+    @apply btn btn-sm btn-outline;
+}
+
+.dt-button-collection .dt-button {
+    @apply btn btn-sm btn-ghost justify-start w-full;
+}
+
+.dt-button-collection .dt-button.active {
+    @apply bg-primary text-primary-content;
+}
+
+/* ==============================================
+   MOBILE OPTIMIZATIONS
+   ============================================== */
+
+@media screen and (max-width: 768px) {
+    /* Stack controls vertically on mobile */
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        width: 100%;
+        text-align: left;
+    }
+
+    .dataTables_wrapper .dataTables_filter {
+        margin-top: 1rem;
+    }
+
+    .dataTables_filter input {
+        max-width: 100%;
+    }
+
+    /* Stack pagination on mobile */
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        width: 100%;
+        text-align: center;
+    }
+
+    .dataTables_paginate {
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    /* Smaller buttons on mobile */
+    .dt-button {
+        @apply btn-xs;
+    }
+
+    .dataTables_paginate .paginate_button {
+        @apply btn-xs;
+        min-width: 2rem;
+    }
+}
+
+/* ==============================================
+   DARK MODE SPECIFIC ADJUSTMENTS
+   ============================================== */
+
+[data-theme="dark"] table.dataTable thead th {
+    background-color: oklch(var(--b3));
+}
+
+[data-theme="dark"] table.dataTable tbody tr:hover {
+    background-color: oklch(var(--b3));
+}
+
+/* ==============================================
+   LOADING SKELETON (optional enhancement)
+   ============================================== */
+
+.dataTables_wrapper.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.dataTables_wrapper.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ==============================================
+   CUSTOM SCROLLBAR FOR TABLE CONTAINER
+   ============================================== */
+
+.dataTables_scrollBody::-webkit-scrollbar {
+    height: 8px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-track {
+    @apply bg-base-300;
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb {
+    @apply bg-primary;
+    border-radius: 4px;
+}
+
+.dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-focus;
+}
+
+/* ==============================================
+   ROW SELECTION (if using select extension)
+   ============================================== */
+
+table.dataTable tbody tr.selected {
+    @apply bg-primary/20;
+}
+
+table.dataTable tbody tr.selected:hover {
+    @apply bg-primary/30;
+}
+
+/* ==============================================
+   FIXED COLUMNS (if using fixed columns)
+   ============================================== */
+
+table.dataTable.fixedHeader-floating {
+    @apply shadow-lg;
+}
+
+/* ==============================================
+   PRINT STYLES
+   ============================================== */
+
+@media print {
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_paginate,
+    .dt-buttons {
+        display: none !important;
+    }
+
+    table.dataTable {
+        border: 1px solid #000;
+    }
+
+    table.dataTable thead th,
+    table.dataTable tbody td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+    }
+}

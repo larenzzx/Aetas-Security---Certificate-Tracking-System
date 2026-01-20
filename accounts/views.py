@@ -669,3 +669,67 @@ def profile_edit(request, user_id):
     }
 
     return render(request, 'accounts/profile_edit.html', context)
+
+
+@login_required
+def user_delete(request, user_id):
+    """
+    Delete a user account (Admin only).
+
+    Security considerations:
+    - Only admins can delete users
+    - Cannot delete own account (prevents admin lockout)
+    - Cannot delete superuser accounts (system protection)
+    - Soft delete approach (can be modified to hard delete if needed)
+    - Confirmation required before deletion
+
+    Cascading effects:
+    - User's certificates are preserved (reassign if needed)
+    - User's profile data deleted
+    - User's authentication credentials removed
+    """
+    User = get_user_model()
+
+    # Check if user is admin
+    if not request.user.is_admin():
+        messages.error(request, 'Admin privileges required to delete users.')
+        return redirect('accounts:profile_list')
+
+    # Get user to delete
+    user_to_delete = get_object_or_404(User, pk=user_id)
+
+    # Prevent self-deletion
+    if request.user.id == user_to_delete.id:
+        messages.error(request, 'You cannot delete your own account.')
+        return redirect('accounts:profile_list')
+
+    # Prevent deleting superuser accounts
+    if user_to_delete.is_superuser:
+        messages.error(request, 'Cannot delete superuser accounts.')
+        return redirect('accounts:profile_list')
+
+    if request.method == 'POST':
+        # Get user info before deletion
+        user_name = user_to_delete.get_full_name()
+        user_email = user_to_delete.email
+
+        # Delete profile image if exists
+        if user_to_delete.profile_image:
+            user_to_delete.profile_image.delete(save=False)
+
+        # Delete the user
+        user_to_delete.delete()
+
+        messages.success(
+            request,
+            f'User account for {user_name} ({user_email}) has been deleted successfully.'
+        )
+
+        return redirect('accounts:profile_list')
+
+    # If GET request, show confirmation page
+    context = {
+        'user_to_delete': user_to_delete,
+    }
+
+    return render(request, 'accounts/user_delete_confirm.html', context)

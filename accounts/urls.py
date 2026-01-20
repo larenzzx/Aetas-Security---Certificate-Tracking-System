@@ -79,4 +79,7 @@ urlpatterns = [
     # Create new user (Admin only)
     path('users/create/', views.user_create, name='user_create'),
     path('users/create/success/', views.user_create_success, name='user_create_success'),
+
+    # Delete user (Admin only)
+    path('users/<int:user_id>/delete/', views.user_delete, name='user_delete'),
 ]
