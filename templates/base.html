@@ -15,7 +15,7 @@
     <script>
         // Apply theme immediately before page renders
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
@@ -68,8 +68,8 @@
         <input id="mobile-menu" type="checkbox" class="drawer-toggle" />
 
         <div class="drawer-content flex flex-col">
-            <!-- Navbar -->
-            <div class="navbar bg-base-100 shadow-lg">
+            <!-- Navbar (Sticky at top) -->
+            <div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
                 <div class="flex-1">
                     <!-- Mobile Menu Button (visible only on small screens) -->
                     <label for="mobile-menu" class="btn btn-ghost btn-circle md:hidden">
@@ -137,8 +137,8 @@
                 </div>
             </div>
 
-            <!-- Page Content -->
-            <main class="container mx-auto px-4 py-8">
+            <!-- Page Content (padding added to account for sticky navbar) -->
+            <main class="container mx-auto px-4 py-8 pt-6">
                 <!-- Flash Messages -->
                 {% if messages %}
                 <div class="space-y-2 mb-4">
@@ -280,7 +280,7 @@
         const html = document.querySelector('html');
 
         // Set toggle checkbox based on current theme (already applied in head)
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         themeToggle.checked = savedTheme === 'dark';
 
         // Toggle theme with smooth transition

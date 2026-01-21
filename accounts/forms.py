@@ -226,12 +226,13 @@ class UserUpdateForm(forms.ModelForm):
 
     Can be used by:
     - Users to update their own profile (limited fields)
-    - Admins to update any user profile (all fields)
+    - Admins to update any user profile (all fields including role)
 
     Features:
     - Profile photo upload with validation
     - Personal information updates
     - Department and position management
+    - Role management (admin only)
     - Image size and format validation
     """
 
@@ -245,6 +246,17 @@ class UserUpdateForm(forms.ModelForm):
         help_text='Check this to remove your profile photo and revert to initials'
     )
 
+    # Role field (will be shown only to admins via __init__)
+    role = forms.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'select select-bordered w-full',
+        }),
+        label='User Role',
+        help_text='Admin can manage all users and certificates. Employee can manage only their own certificates.'
+    )
+
     class Meta:
         model = User
         fields = [
@@ -253,6 +265,7 @@ class UserUpdateForm(forms.ModelForm):
             'department',
             'position',
             'profile_image',
+            'role',  # Added for admin use
         ]
 
         widgets = {
@@ -294,6 +307,27 @@ class UserUpdateForm(forms.ModelForm):
             'profile_image': 'Upload a profile photo (JPG, PNG, or WebP - Max 5MB)',
         }
 
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize form with conditional role field visibility.
+
+        The role field is only shown to admin users.
+        Regular employees cannot change their own or others' roles.
+        """
+        # Extract current user from kwargs
+        self.current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+
+        # Hide role field for non-admin users
+        if not self.current_user or not self.current_user.is_admin():
+            # Remove role field from form if user is not admin
+            self.fields.pop('role', None)
+        else:
+            # Admin can see and edit role
+            # Set initial value to current role
+            if self.instance and self.instance.pk:
+                self.fields['role'].initial = self.instance.role
+
     def clean_first_name(self):
         """Validate and normalize first name."""
         first_name = self.cleaned_data.get('first_name', '').strip()
@@ -317,6 +351,32 @@ class UserUpdateForm(forms.ModelForm):
             raise ValidationError('Last name must be at least 2 characters long.')
 
         return last_name.title()
+
+    def clean_role(self):
+        """
+        Validate role changes.
+
+        Security checks:
+        - Only admins can change roles
+        - Prevent users from elevating their own permissions
+        - Validate role is a valid choice
+        """
+        role = self.cleaned_data.get('role')
+
+        # If role field was removed (non-admin user), return current role
+        if 'role' not in self.fields:
+            return self.instance.role if self.instance and self.instance.pk else 'EMPLOYEE'
+
+        # Validate that current user is admin
+        if not self.current_user or not self.current_user.is_admin():
+            raise ValidationError('Only administrators can change user roles.')
+
+        # Validate role is a valid choice
+        valid_roles = [choice[0] for choice in User.ROLE_CHOICES]
+        if role not in valid_roles:
+            raise ValidationError(f'Invalid role. Must be one of: {", ".join(valid_roles)}')
+
+        return role
 
     def clean_profile_image(self):
         """
@@ -349,12 +409,14 @@ class UserUpdateForm(forms.ModelForm):
 
     def save(self, commit=True):
         """
-        Save the user profile with optional image removal.
+        Save the user profile with optional image removal and role changes.
 
         Handles:
         - Profile image upload
         - Profile image removal
         - Personal information updates
+        - Role changes (admin only)
+        - Automatic is_staff update based on role
         """
         user = super().save(commit=False)
 
@@ -364,6 +426,18 @@ class UserUpdateForm(forms.ModelForm):
             if user.profile_image:
                 user.profile_image.delete(save=False)
             user.profile_image = None
+
+        # Handle role changes (only if admin is making the change)
+        if 'role' in self.cleaned_data and self.current_user and self.current_user.is_admin():
+            new_role = self.cleaned_data['role']
+            user.role = new_role
+
+            # Update is_staff based on role
+            # Admin role users should have access to Django admin
+            if new_role == 'ADMIN':
+                user.is_staff = True
+            else:
+                user.is_staff = False
 
         if commit:
             user.save()
