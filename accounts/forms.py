@@ -97,8 +97,8 @@ class UserCreationForm(forms.ModelForm):
             'email': 'User will use this email to log in. Must be unique.',
             'first_name': 'User\'s first name',
             'last_name': 'User\'s last name',
-            'department': 'Optional: Department or team (e.g., Engineering, HR)',
-            'position': 'Optional: Job title or position (e.g., Software Engineer)',
+            'department': 'Department or team',
+            'position': 'Optional: Job title or position (e.g., SOC Analyst)',
             'is_active': 'Uncheck to create a disabled account (user cannot log in)',
         }
 
