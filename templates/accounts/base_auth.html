@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,15 @@
     <meta name="author" content="Aetas Security">
     <link rel="icon" type="image/png" href="{% static 'images/ATS-LOGO.png' %}">
     <title>{% block title %}Authentication - Aetas Security{% endblock %}</title>
+
+    <!-- Immediate theme application to prevent flash -->
+    <script>
+        // Apply theme immediately before page renders
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -113,9 +122,9 @@
     <!-- Theme Application Script -->
     <script>
         // Apply saved theme from main app (if user was logged in before)
-        // Default to light mode for login page
+        // Default to dark mode for login page
         const html = document.querySelector('html');
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         html.setAttribute('data-theme', savedTheme);
     </script>
 
@@ -126,7 +135,7 @@
 
         if (!prefersReducedMotion && typeof particlesJS !== 'undefined') {
             // Get current theme
-            const currentTheme = localStorage.getItem('theme') || 'light';
+            const currentTheme = localStorage.getItem('theme') || 'dark';
 
             // Initialize particles with theme-appropriate colors
             function initParticles(theme) {
