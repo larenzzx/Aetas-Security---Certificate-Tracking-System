@@ -178,6 +178,39 @@
                             </div>
                         </div>
 
+                        <!-- Admin Only Section: Role Management -->
+                        {% if is_admin and form.role %}
+                        <div class="divider"></div>
+
+                        <div class="alert alert-warning">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div class="text-sm">
+                                <strong>Administrator Privilege:</strong> You can change this user's role.
+                                Admins can manage all users and certificates. Employees can only manage their own certificates.
+                            </div>
+                        </div>
+
+                        <div class="form-control mt-4">
+                            <label class="label" for="{{ form.role.id_for_label }}">
+                                <span class="label-text font-semibold">{{ form.role.label }} *</span>
+                                <span class="label-text-alt badge badge-sm badge-warning">Admin Only</span>
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.role.errors.0 }}</span>
+                            </label>
+                            {% endif %}
+                            {% if form.role.help_text %}
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/60">{{ form.role.help_text }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
                         <div class="divider"></div>
 
                         <!-- Form Actions -->

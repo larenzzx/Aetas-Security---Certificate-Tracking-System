@@ -638,12 +638,21 @@ def profile_edit(request, user_id):
         form = UserUpdateForm(
             request.POST,
             request.FILES,  # Important for file uploads
-            instance=user_to_edit
+            instance=user_to_edit,
+            current_user=request.user  # Pass current user for role permission checks
         )
 
         if form.is_valid():
             # Save the form
             user = form.save()
+
+            # Add role change message if admin changed role
+            if request.user.is_admin() and 'role' in form.cleaned_data:
+                if form.cleaned_data['role'] != form.initial.get('role'):
+                    messages.info(
+                        request,
+                        f'User role changed to {user.get_role_display()}.'
+                    )
 
             messages.success(
                 request,
@@ -659,7 +668,10 @@ def profile_edit(request, user_id):
             )
     else:
         # GET request - show form with current data
-        form = UserUpdateForm(instance=user_to_edit)
+        form = UserUpdateForm(
+            instance=user_to_edit,
+            current_user=request.user  # Pass current user for role permission checks
+        )
 
     context = {
         'form': form,
