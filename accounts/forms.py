@@ -70,11 +70,11 @@ class UserCreationForm(forms.ModelForm):
             }),
             'department': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
-                'placeholder': 'Engineering, HR, Sales, etc.',
+                'placeholder': '',
             }),
             'position': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
-                'placeholder': 'Software Engineer, Manager, etc.',
+                'placeholder': 'SOC Analyst, Helpdesk, etc.',
             }),
             'is_active': forms.CheckboxInput(attrs={
                 'class': 'checkbox checkbox-primary',
@@ -279,11 +279,11 @@ class UserUpdateForm(forms.ModelForm):
             }),
             'department': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
-                'placeholder': 'Department or Team'
+                'placeholder': ''
             }),
             'position': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
-                'placeholder': 'Job Title or Position'
+                'placeholder': 'SOC Analyst, Helpdesk, etc.'
             }),
             'profile_image': forms.FileInput(attrs={
                 'class': 'file-input file-input-bordered w-full',
